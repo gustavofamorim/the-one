@@ -39,6 +39,18 @@ public class EnergyModel implements ModuleCommunicationListener {
 	 * {@value report.Report#REPORT_NS}. */
 	public static final String WARMUP_S = "energyWarmup";
 
+	/** Energy recharge period. If the value is > 0 then will recharge the
+	 *  battery with it. If it's = 0 then never will recharge the battery.
+	 *  If the time is < 0, then a randon time will be used to determine
+	 *  the next rechage time.
+	 * */
+	public static final String RECHARGE_TIME_S = "rechargeTime";
+
+	/** Energy value to recharge. If < 0 will recharge a random value of
+	 * energy. Something else indicates the exact value of recharge.
+	 */
+	public static final String RECHARGE_CAPACITY = "rechargeCapacity";
+
 	/** {@link ModuleCommunicationBus} identifier for the "current amount of
 	 * energy left" variable. Value type: double */
 	public static final String ENERGY_VALUE_ID = "Energy.value";
@@ -54,6 +66,9 @@ public class EnergyModel implements ModuleCommunicationListener {
 	private double transmitEnergy;
 	/** energy usage per device discovery response */
 	private double scanResponseEnergy;
+	private double rechargeTime;
+	private double rechargeCapacity;
+	private double lastRecharge;
 	/** sim time of the last energy updated */
 	private double lastUpdate;
 	private ModuleCommunicationBus comBus;
@@ -75,6 +90,10 @@ public class EnergyModel implements ModuleCommunicationListener {
 		this.scanEnergy = s.getDouble(SCAN_ENERGY_S);
 		this.transmitEnergy = s.getDouble(TRANSMIT_ENERGY_S);
 		this.scanResponseEnergy = s.getDouble(SCAN_RSP_ENERGY_S);
+
+		this.rechargeTime = this.processRechargeTime(s.getDouble(RECHARGE_TIME_S));
+		this.rechargeCapacity = s.getDouble(RECHARGE_CAPACITY);
+		this.lastRecharge = 0;
 
 		if (s.contains(WARMUP_S)) {
 			this.warmupTime = s.getInt(WARMUP_S);
@@ -101,10 +120,49 @@ public class EnergyModel implements ModuleCommunicationListener {
 		this.scanResponseEnergy = proto.scanResponseEnergy;
 		this.comBus = null;
 		this.lastUpdate = 0;
+		this.rechargeTime = proto.rechargeTime;
+		this.rechargeCapacity = proto.rechargeCapacity;
+		this.lastRecharge = proto.lastRecharge;
 	}
 
 	public EnergyModel replicate() {
 		return new EnergyModel(this);
+	}
+
+	/** Determine the rechage time period.
+	 * @param rechargeTime The value loaded from settings file.
+	 */
+	protected double processRechargeTime(double rechargeTime){
+		if(rechargeTime < 0){
+			return (new Random().nextDouble());
+		}
+		else{
+			return (rechargeTime);
+		}
+	}
+
+	/** Determine the if it's recharge time.
+	 * @return true if it's recharge time and false otherwise.
+	 */
+	public boolean isRechargeTime(){
+		if(rechargeTime == 0){
+			return (false);
+		}
+		else if(SimClock.getTime() < (this.lastRecharge + this.rechargeTime)){
+			return (false);
+		}
+		return (true);
+	}
+
+	/** Recharge the battery just if necessary.
+	 * @return true if recharged and false otherwise.
+	 */
+	public void rechargeIfNecessary(){
+		if(isRechargeTime()){
+			this.lastRecharge = SimClock.getTime();
+			this.currentEnergy += this.rechargeCapacity;
+			comBus.updateProperty(ENERGY_VALUE_ID, this.currentEnergy);
+		}
 	}
 
 	/**
@@ -148,7 +206,7 @@ public class EnergyModel implements ModuleCommunicationListener {
 		if (comBus == null) {
 			return; /* model not initialized (via update) yet */
 		}
-
+		this.rechargeIfNecessary();
 		if (amount >= this.currentEnergy) {
 			comBus.updateProperty(ENERGY_VALUE_ID, 0.0);
 		} else {

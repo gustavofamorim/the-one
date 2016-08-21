@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import routing.util.EnergyModel;
+import routing.ActiveRouter;
 
 import util.ActivenessHandler;
 
@@ -230,6 +230,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public boolean isActive() {
 		boolean active;
+		//TODO: This isn't the best way to do this, but works
+		ActiveRouter router = this.host.getRouter() instanceof ActiveRouter ? (ActiveRouter)this.host.getRouter(): null;
 
 		if (ah == null) {
 			return true; /* no handler: always active */
@@ -237,8 +239,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 
 		active = ah.isActive(this.activenessJitterValue);
 
-		if (active && host.getComBus().getDouble(EnergyModel.ENERGY_VALUE_ID,
-					1) <= 0) {
+		if (active && !router.hasEnergy()) {
 			/* TODO: better way to check battery level */
 			/* no battery -> inactive */
 			active = false;
