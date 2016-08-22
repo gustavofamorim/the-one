@@ -67,16 +67,17 @@ Group.router = EpidemicRouter
 Group.initialEnergy = 4800
 # Interval energy recharge in seconds (2419200 = recharge every 2419200 seconds). Different values ​​can be used by group
 Group.rechargeTime = 6000
-# How much energy will be recharge on rechage time
+# How much energy will be recharged on rechage time
 Group.rechargeCapacity = 4800
 # Energy expenditure by scan. (Different values ​​can be used by group)
 Group.scanEnergy = 0.92
-#Group.scanEnergy = 1
 Group.scanResponseEnergy = 0.1
 # Energy expenditure per second when sending data. (Different values ​​can be used by group)
 Group.transmitEnergy = 0.08
 #Energy expenditure  per second when receiving data. (Different values ​​can be used by group)
 Group.receiveEnergy = 0.08
+# Energy expediture by GPS scan
+Group.gpsScanEnergy = 0.8
 ##End energy module settings#####################################################################
 
 Group.scanInterval = 32

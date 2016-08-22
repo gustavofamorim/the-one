@@ -49,7 +49,10 @@ public class EnergyModel implements ModuleCommunicationListener {
 	/** Energy value to recharge. If < 0 will recharge a random value of
 	 * energy. Something else indicates the exact value of recharge.
 	 */
-	public static final String RECHARGE_CAPACITY = "rechargeCapacity";
+	public static final String RECHARGE_CAPACITY_S = "rechargeCapacity";
+
+	/** Energy usage per GPS scanning (location discovery) -setting id ({@value}). */
+	public static final String GPS_SCAN_ENERGY_S = "gpsScanEnergy";
 
 	/** {@link ModuleCommunicationBus} identifier for the "current amount of
 	 * energy left" variable. Value type: double */
@@ -66,9 +69,14 @@ public class EnergyModel implements ModuleCommunicationListener {
 	private double transmitEnergy;
 	/** energy usage per device discovery response */
 	private double scanResponseEnergy;
+	/** Recharge period */
 	private double rechargeTime;
+	/** Amount of energy to increase on recharges */
 	private double rechargeCapacity;
+	/** Last recharge time */
 	private double lastRecharge;
+	/** energy usage per GPS scan */
+	private double gpsScanEnergy;
 	/** sim time of the last energy updated */
 	private double lastUpdate;
 	private ModuleCommunicationBus comBus;
@@ -92,8 +100,10 @@ public class EnergyModel implements ModuleCommunicationListener {
 		this.scanResponseEnergy = s.getDouble(SCAN_RSP_ENERGY_S);
 
 		this.rechargeTime = this.processRechargeTime(s.getDouble(RECHARGE_TIME_S));
-		this.rechargeCapacity = s.getDouble(RECHARGE_CAPACITY);
+		this.rechargeCapacity = s.getDouble(RECHARGE_CAPACITY_S);
 		this.lastRecharge = 0;
+
+		this.gpsScanEnergy = s.contains(GPS_SCAN_ENERGY_S) ? s.getDouble(GPS_SCAN_ENERGY_S) : 0;
 
 		if (s.contains(WARMUP_S)) {
 			this.warmupTime = s.getInt(WARMUP_S);
@@ -123,6 +133,7 @@ public class EnergyModel implements ModuleCommunicationListener {
 		this.rechargeTime = proto.rechargeTime;
 		this.rechargeCapacity = proto.rechargeCapacity;
 		this.lastRecharge = proto.lastRecharge;
+		this.gpsScanEnergy = proto.gpsScanEnergy;
 	}
 
 	public EnergyModel replicate() {
@@ -221,6 +232,14 @@ public class EnergyModel implements ModuleCommunicationListener {
 	 */
 	public void reduceDiscoveryEnergy() {
 		reduceEnergy(this.scanResponseEnergy);
+	}
+
+	/**
+	 * Reduces the energy reserve for the amount that is used when the host
+	 * start a position discovery
+	 */
+	public void reduceGpsDiscoveryEnergy(){
+		reduceEnergy(this.gpsScanEnergy);
 	}
 
 	/**
