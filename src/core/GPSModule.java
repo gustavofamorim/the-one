@@ -6,12 +6,12 @@ package core;
 public class GPSModule implements Cloneable{
 
     /** Reference for the associated DTN Host */
-    private DTNHost associatedHost;
+    private DTNHost host;
     /** Actual position of the device */
     private Coord position = new Coord(0,0);
 
     public GPSModule(DTNHost associatedHost, Coord position) {
-        this.associatedHost = associatedHost;
+        this.host = associatedHost;
         this.position = position;
     }
 
@@ -19,6 +19,7 @@ public class GPSModule implements Cloneable{
      *  @return the actual position of the node with energy consumption.
      */
     public Coord getPosition() {
+        this.host.getEnergy().reduceGpsDiscoveryEnergy();
         return position;
     }
 
@@ -26,7 +27,6 @@ public class GPSModule implements Cloneable{
      *  @return the actual position of the node without energy consumption.
      */
     public Coord getPositionWithouConsumption(){
-        //TODO: Consume energy here!
         return position;
     }
 

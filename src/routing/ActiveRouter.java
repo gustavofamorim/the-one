@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import routing.util.EnergyModel;
 import routing.util.MessageTransferAcceptPolicy;
 import routing.util.RoutingInfo;
 import util.Tuple;
@@ -47,7 +46,6 @@ public abstract class ActiveRouter extends MessageRouter {
 	private double lastTtlCheck;
 
 	private MessageTransferAcceptPolicy policy;
-	private EnergyModel energy;
 
 	/**
 	 * Constructor. Creates a new message router based on the settings in
@@ -60,12 +58,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		this.policy = new MessageTransferAcceptPolicy(s);
 
 		this.deleteDelivered = s.getBoolean(DELETE_DELIVERED_S, false);
-
-		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
-			this.energy = new EnergyModel(s);
-		} else {
-			this.energy = null; /* no energy model */
-		}
 	}
 
 	/**
@@ -76,7 +68,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		super(r);
 		this.deleteDelivered = r.deleteDelivered;
 		this.policy = r.policy;
-		this.energy = (r.energy != null ? r.energy.replicate() : null);
 	}
 
 	@Override
@@ -94,8 +85,8 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	@Override
 	public void changedConnection(Connection con) {
-		if (this.energy != null && con.isUp() && !con.isInitiator(getHost())) {
-			this.energy.reduceDiscoveryEnergy();
+		if (this.getHost().isEnergyModelEnabled() && con.isUp() && !con.isInitiator(getHost())) {
+			this.getHost().getEnergy().reduceDiscoveryEnergy();
 		}
 	}
 
@@ -242,7 +233,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			return DENIED_TTL;
 		}
 
-		if (energy != null && energy.getEnergy() <= 0) {
+		if (!this.getHost().hasEnergy()) {
 			return MessageRouter.DENIED_LOW_RESOURCES;
 		}
 
@@ -563,16 +554,6 @@ public abstract class ActiveRouter extends MessageRouter {
 	}
 
 	/**
-	 * Returns true if the node has energy left (i.e., energy modeling is
-	 * enabled OR (is enabled and model has energy left))
-	 * @return has the node energy
-	 */
-	public boolean hasEnergy() {
-		this.energy.rechargeIfNecessary();
-		return this.energy == null || this.energy.getEnergy() > 0;
-	}
-
-	/**
 	 * Checks out all sending connections to finalize the ready ones
 	 * and abort those whose connection went down. Also drops messages
 	 * whose TTL <= 0 (checking every one simulated minute).
@@ -625,10 +606,10 @@ public abstract class ActiveRouter extends MessageRouter {
 			lastTtlCheck = SimClock.getTime();
 		}
 
-		if (energy != null) {
+		if (this.getHost().isEnergyModelEnabled()) {
 			/* TODO: add support for other interfaces */
 			NetworkInterface iface = getHost().getInterface(1);
-			energy.update(iface, getHost().getComBus());
+			this.getHost().getEnergy().update(iface, getHost().getComBus());
 		}
 	}
 
@@ -651,9 +632,9 @@ public abstract class ActiveRouter extends MessageRouter {
 	@Override
 	public RoutingInfo getRoutingInfo() {
 		RoutingInfo top = super.getRoutingInfo();
-		if (energy != null) {
+		if (this.getHost().isEnergyModelEnabled()) {
 			top.addMoreInfo(new RoutingInfo("Energy level: " +
-					String.format("%.2f", energy.getEnergy())));
+					String.format("%.2f", this.getHost().getEnergy().getEnergy())));
 		}
 		return top;
 	}

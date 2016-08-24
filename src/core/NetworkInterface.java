@@ -230,8 +230,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public boolean isActive() {
 		boolean active;
-		//TODO: This isn't the best way to do this, but works
-		ActiveRouter router = this.host.getRouter() instanceof ActiveRouter ? (ActiveRouter)this.host.getRouter(): null;
 
 		if (ah == null) {
 			return true; /* no handler: always active */
@@ -239,8 +237,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 
 		active = ah.isActive(this.activenessJitterValue);
 
-		if (active && !router.hasEnergy()) {
-			/* TODO: better way to check battery level */
+		if (active && !this.host.hasEnergy()) {
 			/* no battery -> inactive */
 			active = false;
 		}

@@ -87,7 +87,7 @@ public class EnergyModel implements ModuleCommunicationListener {
 	 * the given Settings object.
 	 * @param s The settings object
 	 */
-	public EnergyModel(Settings s) {
+	public EnergyModel(Settings s, ModuleCommunicationBus comBus) {
 		this.initEnergy = s.getCsvDoubles(INIT_ENERGY_S);
 
 		if (this.initEnergy.length != 1 && this.initEnergy.length != 2) {
@@ -95,6 +95,8 @@ public class EnergyModel implements ModuleCommunicationListener {
 					"either a single value or two comma separated values");
 		}
 
+		this.comBus = comBus;
+		setEnergy(this.initEnergy);
 		this.scanEnergy = s.getDouble(SCAN_ENERGY_S);
 		this.transmitEnergy = s.getDouble(TRANSMIT_ENERGY_S);
 		this.scanResponseEnergy = s.getDouble(SCAN_RSP_ENERGY_S);
@@ -193,6 +195,8 @@ public class EnergyModel implements ModuleCommunicationListener {
 			this.currentEnergy = range[0] +
 				rng.nextDouble() * (range[1] - range[0]);
 		}
+		comBus.addProperty(ENERGY_VALUE_ID, this.currentEnergy);
+		this.comBus.subscribe(ENERGY_VALUE_ID, this);
 	}
 
 	/**
@@ -201,6 +205,10 @@ public class EnergyModel implements ModuleCommunicationListener {
 	 */
 	public double getEnergy() {
 		return this.currentEnergy;
+	}
+
+	public boolean hasEnergy(){
+		return (this.currentEnergy > 0 ? true : false);
 	}
 
 	/**

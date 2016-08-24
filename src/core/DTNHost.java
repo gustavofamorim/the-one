@@ -11,6 +11,7 @@ import java.util.List;
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
+import routing.util.EnergyModel;
 import routing.util.RoutingInfo;
 
 import static core.Constants.DEBUG;
@@ -37,6 +38,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	private ModuleCommunicationBus comBus;
 	private ConcentrationMap concentrationMap; //The node vision of the simulation map
 
+	private EnergyModel energy;
+
 	static {
 		DTNSim.registerForReset(DTNHost.class.getCanonicalName());
 		reset();
@@ -55,7 +58,8 @@ public class DTNHost implements Comparable<DTNHost> {
 			List<MovementListener> movLs,
 			String groupId, List<NetworkInterface> interf,
 			ModuleCommunicationBus comBus,
-			MovementModel mmProto, MessageRouter mRouterProto) {
+			MovementModel mmProto, MessageRouter mRouterProto,
+		    Settings s) {
 		this.comBus = comBus;
 		this.location = new GPSModule(this, new Coord(0,0));
 		this.address = getNextAddress();
@@ -89,6 +93,12 @@ public class DTNHost implements Comparable<DTNHost> {
 			for (MovementListener l : movLs) {
 				l.initialLocation(this, this.location.getPositionWithouConsumption());
 			}
+		}
+
+		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
+			this.energy = new EnergyModel(s, this.comBus);
+		} else {
+			this.energy = null; /* no energy model */
 		}
 	}
 
@@ -519,6 +529,31 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public ConcentrationMap getConcentrationMap() {
 		return concentrationMap;
+	}
+
+	/**
+	 * Returns true if the node has energy left (i.e., energy modeling is
+	 * enabled OR (is enabled and model has energy left))
+	 * @return has the node energy
+	 */
+	public boolean hasEnergy(){
+		return (this.energy == null ? true : this.energy.hasEnergy());
+	}
+
+    /**
+     * Returns true if the node has energy module enabled.
+     * @return has the node energy module enabled.
+     */
+	public boolean isEnergyModelEnabled(){
+		return (this.energy != null);
+	}
+
+    /**
+     * Returns the energy model object.
+     * @return the energy model object.
+     */
+	public EnergyModel getEnergy() {
+		return energy;
 	}
 
 	/**
