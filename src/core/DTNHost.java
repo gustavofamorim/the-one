@@ -22,7 +22,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	private static int nextAddress = 0;
 	private int address;
 
-	private Coord location; 	// where is the host
+	private GPSModule location;
 	private Coord destination;	// where is it going
 
 	private MessageRouter router;
@@ -35,6 +35,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
+	private ConcentrationMap concentrationMap; //The node vision of the simulation map
 
 	static {
 		DTNSim.registerForReset(DTNHost.class.getCanonicalName());
@@ -56,7 +57,7 @@ public class DTNHost implements Comparable<DTNHost> {
 			ModuleCommunicationBus comBus,
 			MovementModel mmProto, MessageRouter mRouterProto) {
 		this.comBus = comBus;
-		this.location = new Coord(0,0);
+		this.location = new GPSModule(this, new Coord(0,0));
 		this.address = getNextAddress();
 		this.name = groupId+address;
 		this.net = new ArrayList<NetworkInterface>();
@@ -79,14 +80,14 @@ public class DTNHost implements Comparable<DTNHost> {
 		this.movement.setHost(this);
 		setRouter(mRouterProto.replicate());
 
-		this.location = movement.getInitialLocation();
+		this.location = new GPSModule(this, this.movement.getInitialLocation());
 
 		this.nextTimeToMove = movement.nextPathAvailable();
 		this.path = null;
 
 		if (movLs != null) { // inform movement listeners about the location
 			for (MovementListener l : movLs) {
-				l.initialLocation(this, this.location);
+				l.initialLocation(this, this.location.getPositionWithouConsumption());
 			}
 		}
 	}
@@ -191,7 +192,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return The location
 	 */
 	public Coord getLocation() {
-		return this.location;
+		return this.location.getPositionWithouConsumption();
 	}
 
 	/**
@@ -209,7 +210,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param location The location to set
 	 */
 	public void setLocation(Coord location) {
-		this.location = location.clone();
+		this.location = new GPSModule(this, location.clone());
 	}
 
 	/**
@@ -387,24 +388,24 @@ public class DTNHost implements Comparable<DTNHost> {
 		}
 
 		possibleMovement = timeIncrement * speed;
-		distance = this.location.distance(this.destination);
+		distance = this.location.getPositionWithouConsumption().distance(this.destination);
 
 		while (possibleMovement >= distance) {
 			// node can move past its next destination
-			this.location.setLocation(this.destination); // snap to destination
+			this.location.setPosition(this.destination); // snap to destination
 			possibleMovement -= distance;
 			if (!setNextWaypoint()) { // get a new waypoint
 				return; // no more waypoints left
 			}
-			distance = this.location.distance(this.destination);
+			distance = this.location.getPositionWithouConsumption().distance(this.destination);
 		}
 
 		// move towards the point for possibleMovement amount
 		dx = (possibleMovement/distance) * (this.destination.getX() -
-				this.location.getX());
+				this.location.getPositionWithouConsumption().getX());
 		dy = (possibleMovement/distance) * (this.destination.getY() -
-				this.location.getY());
-		this.location.translate(dx, dy);
+				this.location.getPositionWithouConsumption().getY());
+		this.location.getPositionWithouConsumption().translate(dx, dy);
 	}
 
 	/**
@@ -510,6 +511,14 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void deleteMessage(String id, boolean drop) {
 		this.router.deleteMessage(id, drop);
+	}
+
+	/**
+	 * Returns the concentration map of this node.
+	 * @return The concentration map of this node.
+	 */
+	public ConcentrationMap getConcentrationMap() {
+		return concentrationMap;
 	}
 
 	/**
