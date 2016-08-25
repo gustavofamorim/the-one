@@ -137,16 +137,16 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 * after the other coordinate
 	 */
 	public int compareTo(Coord other) {
+		if (this.x < other.x) {
+			return -1;
+		}
+		else if (this.x > other.x) {
+			return 1;
+		}
 		if (this.y < other.y) {
 			return -1;
 		}
 		else if (this.y > other.y) {
-			return 1;
-		}
-		else if (this.x < other.x) {
-			return -1;
-		}
-		else if (this.x > other.x) {
 			return 1;
 		}
 		else {
