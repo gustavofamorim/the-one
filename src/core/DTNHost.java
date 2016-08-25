@@ -11,6 +11,7 @@ import java.util.List;
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
+import routing.util.ConcentrationMap;
 import routing.util.EnergyModel;
 import routing.util.RoutingInfo;
 
@@ -44,6 +45,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		DTNSim.registerForReset(DTNHost.class.getCanonicalName());
 		reset();
 	}
+
 	/**
 	 * Creates a new DTNHost.
 	 * @param msgLs Message listeners
@@ -95,9 +97,12 @@ public class DTNHost implements Comparable<DTNHost> {
 			}
 		}
 
+		this.concentrationMap = new ConcentrationMap(this, s);
+
 		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
 			this.energy = new EnergyModel(s, this.comBus);
-		} else {
+		}
+		else {
 			this.energy = null; /* no energy model */
 		}
 	}
@@ -176,6 +181,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param con  The connection object whose state changed
 	 */
 	public void connectionUp(Connection con) {
+		this.concentrationMap.recordContact(this.location.getPosition());
 		this.router.changedConnection(con);
 	}
 
@@ -229,6 +235,14 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	/**
+	 * Returns the Node's name.
+	 * @return The Node's name.
+	 */
+	public String getName() {
+		return name;
 	}
 
 	/**

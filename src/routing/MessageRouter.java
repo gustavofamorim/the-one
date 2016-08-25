@@ -599,6 +599,8 @@ public abstract class MessageRouter {
 		ri.addMoreInfo(delivered);
 		ri.addMoreInfo(cons);
 
+		ri.addMoreInfo(this.host.getConcentrationMap().makeRountingInfo());
+
 		for (Message m : this.incomingMessages.values()) {
 			incoming.addMoreInfo(new RoutingInfo(m));
 		}
