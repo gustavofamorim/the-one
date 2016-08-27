@@ -4,6 +4,8 @@ import core.Coord;
 import core.DTNHost;
 import core.Settings;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.TreeMap;
 
 /** The concentration gradient map of the simulation map.
@@ -21,10 +23,13 @@ public class ConcentrationMap implements Cloneable{
     /** Concentration gradient map.
      * The key {@code Coord} indicate the left botton point of the
      * region.
-     * The value {@code Double} indicate the registred number of contacts in the region
+     * The value {@code BigDecimal} indicate the registred number of contacts in the region
      * identified by the key.
      */
     private TreeMap<Coord, Long> map;
+
+    /** The total number of contacts registered. */
+    private long totalOfContacts = 0;
 
     public ConcentrationMap(DTNHost host, Settings s){
         this.granularity = s.getDouble(GRANULARITY_MAP_S);
@@ -37,9 +42,12 @@ public class ConcentrationMap implements Cloneable{
      * @return The tuble of the region wich includes de coordinate.
      */
     private Coord convertMapLocationToRegionKey(Coord mapLocation){
-        Double x = Math.floor(mapLocation.getX() / this.granularity);
-        Double y = Math.floor(mapLocation.getY() / this.granularity);
-        return (new Coord(x,y));
+        if(!this.map.containsKey(mapLocation)) {
+            double x = Math.floor(mapLocation.getX() / this.granularity);
+            double y = Math.floor(mapLocation.getY() / this.granularity);
+            return (new Coord(x, y));
+        }
+        return (mapLocation);
     }
 
     /**
@@ -47,13 +55,16 @@ public class ConcentrationMap implements Cloneable{
      * @param coord The region coordinate.
      * @return The concentration of a region.
      */
-    public double getConcentration(Coord coord){
+    public BigDecimal getConcentration(Coord coord){
         Coord regionBase = this.convertMapLocationToRegionKey(coord);
         if (this.map.containsKey(regionBase)){
-            return (this.map.get(regionBase) / (this.granularity * this.granularity));
+
+            BigDecimal result = new BigDecimal(this.map.get(regionBase)).divide(new BigDecimal(this.totalOfContacts), MathContext.DECIMAL128);
+            System.out.println(result);
+            return (result);
         }
         //Region not mapped yet
-        return (0);
+        return (new BigDecimal("0"));
     }
 
     /**
@@ -68,6 +79,7 @@ public class ConcentrationMap implements Cloneable{
         else{
             this.map.replace(regionOfNode, new Long(this.map.get(regionOfNode) + 1));
         }
+        this.totalOfContacts++;
     }
 
     /**
@@ -84,17 +96,21 @@ public class ConcentrationMap implements Cloneable{
                 this.map.put(key, anotherMap.map.get(key));
             }
         }
+        this.totalOfContacts += anotherMap.totalOfContacts;
     }
 
     /** Returns the routing info of this concentration map.
      *  @return The routing info of this concentration map.
      */
     public RoutingInfo makeRountingInfo(){
-        RoutingInfo concentrationMap = new RoutingInfo("Concentration Map:");
+        RoutingInfo concentrationMap = new RoutingInfo("Regions Map:");
+        concentrationMap.addMoreInfo(new RoutingInfo("Total Number of Contacts: " + this.totalOfContacts));
+
+        RoutingInfo regionMap = new RoutingInfo("Region Map: ");
+        concentrationMap.addMoreInfo(regionMap);
 
         for(Coord coord : this.map.keySet()){
-            RoutingInfo info = new RoutingInfo("Region (" + coord.getX() + ", " + coord.getY() + "): " + this.map.get(coord));
-            concentrationMap.addMoreInfo(info);
+            regionMap.addMoreInfo(new RoutingInfo("Region (" + coord.getX() + ", " + coord.getY() + "): " + this.getConcentration(coord)));
         }
 
         return (concentrationMap);
