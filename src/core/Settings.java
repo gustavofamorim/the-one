@@ -864,7 +864,7 @@ public class Settings {
 	 * @return The new object
 	 * @throws SettingsError if object couldn't be created
 	 */
-	private Object loadObject(String className, Class<?>[] argsClass,
+	public Object loadObject(String className, Class<?>[] argsClass,
 			Object[] args) {
 		Object o = null;
 		Class<?> objClass = getClass(className);

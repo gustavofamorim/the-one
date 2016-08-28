@@ -11,7 +11,7 @@ import java.util.List;
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
-import routing.util.ConcentrationMap;
+import routing.util.ConcentrationMap.ConcentrationMap;
 import routing.util.EnergyModel;
 import routing.util.RoutingInfo;
 
@@ -97,8 +97,11 @@ public class DTNHost implements Comparable<DTNHost> {
 		}
 
 		if(s.contains(ConcentrationMap.GRANULARITY_MAP_S)){
-            this.concentrationMap = new ConcentrationMap(this, s);
-        }
+			//TODO: Best way to do this
+			Class<?> argClass[] = {DTNHost.class, Settings.class};
+			Object args[] = {this, s};
+			this.concentrationMap = (ConcentrationMap) s.loadObject(ConcentrationMap.PACKAGE_S + s.getSetting(ConcentrationMap.CONCENTRATION_MERGE_MODEL_S), argClass, args);
+		}
 
 		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
 			this.energy = new EnergyModel(s, this.comBus);
@@ -179,7 +182,10 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param con  The connection object whose state changed
 	 */
 	public void connectionUp(Connection con) {
-		this.concentrationMap.recordContact(this.location.getPosition());
+		if(this.concentrationMap != null){
+			con.getOtherNode(this).concentrationMap.mergeConcentrationMap(this.getConcentrationMap());
+			this.concentrationMap.recordContact(this.location.getPosition());
+		}
 		this.router.changedConnection(con);
 	}
 
