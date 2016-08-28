@@ -15,10 +15,10 @@ public class ConcentrationMap implements Cloneable{
     /** The granularity -setting id ({@value}). Double valued.
      * Defines the side of all square regions mapped.
      */
-    public static final String GRANULARITY_MAP_S = "granularity";
+    public static final String GRANULARITY_MAP_S = "regionLength";
 
     /** The region side length. */
-    private static double granularity;
+    private static double regionLength;
 
     /** Concentration gradient map.
      * The key {@code Coord} indicate the left botton point of the
@@ -28,12 +28,20 @@ public class ConcentrationMap implements Cloneable{
      */
     private TreeMap<Coord, Long> map;
 
+    /** The node reference */
+    private DTNHost host;
+
+    /** The world size */
+    //TODO: Study a best way do do this...
+    private int worldSize[] = new Settings(movement.MovementModel.MOVEMENT_MODEL_NS).getCsvInts(movement.MovementModel.WORLD_SIZE);
+
     /** The total number of contacts registered. */
     private long totalOfContacts = 0;
 
     public ConcentrationMap(DTNHost host, Settings s){
-        this.granularity = s.getDouble(GRANULARITY_MAP_S);
+        this.host = host;
         this.map = new TreeMap<>();
+        this.regionLength = s.getDouble(GRANULARITY_MAP_S);
     }
 
     /**
@@ -43,8 +51,8 @@ public class ConcentrationMap implements Cloneable{
      */
     private Coord convertMapLocationToRegionKey(Coord mapLocation){
         if(!this.map.containsKey(mapLocation)) {
-            double x = Math.floor(mapLocation.getX() / this.granularity);
-            double y = Math.floor(mapLocation.getY() / this.granularity);
+            double x = Math.floor(mapLocation.getX() / this.regionLength);
+            double y = Math.floor(mapLocation.getY() / this.regionLength);
             return (new Coord(x, y));
         }
         return (mapLocation);
@@ -60,7 +68,6 @@ public class ConcentrationMap implements Cloneable{
         if (this.map.containsKey(regionBase)){
 
             BigDecimal result = new BigDecimal(this.map.get(regionBase)).divide(new BigDecimal(this.totalOfContacts), MathContext.DECIMAL128);
-            System.out.println(result);
             return (result);
         }
         //Region not mapped yet
@@ -128,5 +135,20 @@ public class ConcentrationMap implements Cloneable{
             e.printStackTrace();
         }
         return (null);
+    }
+
+    /**
+     * Parse this concentration map to a string.
+     * @return A string parsed of this map.
+     */
+    @Override
+    public String toString(){
+        String str = "";
+        for(int i = 0; i < Math.floor(this.worldSize[0] / this.regionLength); i++){
+            for(int j = 0; j < Math.floor(this.worldSize[1] / this.regionLength); j++){
+                str += "\t" + i + "  " + j + "  " + this.getConcentration(new Coord(i, j)) + "\n";
+            }
+        }
+        return (str);
     }
 }
