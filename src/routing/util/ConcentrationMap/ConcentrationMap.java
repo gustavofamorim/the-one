@@ -1,8 +1,9 @@
-package routing.util;
+package routing.util.ConcentrationMap;
 
 import core.Coord;
 import core.DTNHost;
 import core.Settings;
+import routing.util.RoutingInfo;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -10,15 +11,22 @@ import java.util.TreeMap;
 
 /** The concentration gradient map of the simulation map.
  */
-public class ConcentrationMap implements Cloneable{
+public abstract class ConcentrationMap<StoreType> implements Cloneable{
+
+    public static final String PACKAGE_S = "routing.util.ConcentrationMap.";
 
     /** The granularity -setting id ({@value}). Double valued.
      * Defines the side of all square regions mapped.
      */
     public static final String GRANULARITY_MAP_S = "regionLength";
 
+    /** The model to be used when is merging the map. Double valued.
+     * Defines the side of all square regions mapped.
+     */
+    public static final String CONCENTRATION_MERGE_MODEL_S = "concentrationMergeModel";
+
     /** The region side length. */
-    private static double regionLength;
+    protected static double regionLength;
 
     /** Concentration gradient map.
      * The key {@code Coord} indicate the left botton point of the
@@ -26,17 +34,17 @@ public class ConcentrationMap implements Cloneable{
      * The value {@code BigDecimal} indicate the registred number of contacts in the region
      * identified by the key.
      */
-    private TreeMap<Coord, Long> map;
+    protected TreeMap<Coord, StoreType> map;
 
     /** The node reference */
-    private DTNHost host;
+    protected DTNHost host;
 
     /** The world size */
-    //TODO: Study a best way do do this...
-    private int worldSize[] = new Settings(movement.MovementModel.MOVEMENT_MODEL_NS).getCsvInts(movement.MovementModel.WORLD_SIZE);
+    //TODO: Study a best way to do this...
+    protected int worldSize[] = new Settings(movement.MovementModel.MOVEMENT_MODEL_NS).getCsvInts(movement.MovementModel.WORLD_SIZE);
 
     /** The total number of contacts registered. */
-    private long totalOfContacts = 0;
+    protected long totalOfContacts = 0;
 
     public ConcentrationMap(DTNHost host, Settings s){
         this.host = host;
@@ -67,7 +75,7 @@ public class ConcentrationMap implements Cloneable{
         Coord regionBase = this.convertMapLocationToRegionKey(coord);
         if (this.map.containsKey(regionBase)){
 
-            BigDecimal result = new BigDecimal(this.map.get(regionBase)).divide(new BigDecimal(this.totalOfContacts), MathContext.DECIMAL128);
+            BigDecimal result = new BigDecimal(this.getRegionNrOfContacts(regionBase)).divide(new BigDecimal(this.totalOfContacts), MathContext.DECIMAL128);
             return (result);
         }
         //Region not mapped yet
@@ -81,10 +89,10 @@ public class ConcentrationMap implements Cloneable{
     public void recordContact(Coord nodeLocation){
         Coord regionOfNode = this.convertMapLocationToRegionKey(nodeLocation);
         if(!this.map.containsKey(regionOfNode)){
-            this.map.put(regionOfNode, new Long(1));
+            this.setRegionNrOfContacts(regionOfNode, new Long(1));
         }
         else{
-            this.map.replace(regionOfNode, new Long(this.map.get(regionOfNode) + 1));
+            this.setRegionNrOfContacts(regionOfNode, new Long(this.getRegionNrOfContacts(regionOfNode) + 1));
         }
         this.totalOfContacts++;
     }
@@ -93,18 +101,7 @@ public class ConcentrationMap implements Cloneable{
      * Merge this map with another map received from another node.
      * @param anotherMap The map received from another node.
      */
-    public void mergeConcentrationMap(ConcentrationMap anotherMap){
-        for(Coord key : anotherMap.map.keySet()){
-            //If this map contais the region, sum the numbers contacts in the region
-            if(this.map.containsKey(key)){
-                this.map.replace(key, this.map.get(key) + anotherMap.map.get(key));
-            }
-            else{
-                this.map.put(key, anotherMap.map.get(key));
-            }
-        }
-        this.totalOfContacts += anotherMap.totalOfContacts;
-    }
+    public abstract void mergeConcentrationMap(ConcentrationMap<StoreType> anotherMap);
 
     /** Returns the routing info of this concentration map.
      *  @return The routing info of this concentration map.
@@ -122,6 +119,10 @@ public class ConcentrationMap implements Cloneable{
 
         return (concentrationMap);
     }
+
+    public abstract Long getRegionNrOfContacts(Coord region);
+
+    public abstract void setRegionNrOfContacts(Coord region, Long contacts);
 
     /**
      * Clone this concentration map.
