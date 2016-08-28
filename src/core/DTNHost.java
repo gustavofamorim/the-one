@@ -37,9 +37,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
-	private ConcentrationMap concentrationMap; //The node vision of the simulation map
-
-	private EnergyModel energy;
+	private ConcentrationMap concentrationMap = null;
+	private EnergyModel energy = null;
 
 	static {
 		DTNSim.registerForReset(DTNHost.class.getCanonicalName());
@@ -97,13 +96,12 @@ public class DTNHost implements Comparable<DTNHost> {
 			}
 		}
 
-		this.concentrationMap = new ConcentrationMap(this, s);
+		if(s.contains(ConcentrationMap.GRANULARITY_MAP_S)){
+            this.concentrationMap = new ConcentrationMap(this, s);
+        }
 
 		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
 			this.energy = new EnergyModel(s, this.comBus);
-		}
-		else {
-			this.energy = null; /* no energy model */
 		}
 	}
 
