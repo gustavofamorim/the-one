@@ -27,7 +27,7 @@ public class SumConcentrationMap extends ConcentrationMap<BigDecimal>{
             }
         }
         this.totalOfContacts = this.totalOfContacts.add(anotherMap.totalOfContacts);
-        this.applyReductionOfValues();
+        //this.applyReductionOfValues();
     }
 
     @Override

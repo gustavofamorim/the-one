@@ -156,9 +156,9 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
         Coord tmpCoord = new Coord(0,0);
         String str = "";
         str += this.totalOfContacts + "\n";
-        for(double i = 0; i < Math.floor(this.worldSize[0] / this.regionLength); i+=1){
+        for(double i = 0; i < (Math.ceil(this.worldSize[0] / this.regionLength) + 1); i+=1){
             tmpCoord.setX(i);
-            for(double j = 0; j < Math.floor(this.worldSize[1] / this.regionLength); j+=1){
+            for(double j = 0; j < (Math.ceil(this.worldSize[1] / this.regionLength) + 1); j+=1){
                 tmpCoord.setY(j);
                 str += "\t" + i + "\t" + j + "\t" + this.getRegionNrOfContacts(tmpCoord) + "\t" + this.getConcentration(tmpCoord) + "\n";
             }
