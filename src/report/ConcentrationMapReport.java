@@ -18,6 +18,6 @@ public class ConcentrationMapReport extends SnapshotReport
             throw new SimError("Host " + host +
                     " don't have concentration map enabled");
         }
-        write(host.toString() + "\n" + host.getConcentrationMap().toString());
+        write(host.toString() + " " + host.getConcentrationMap().toString());
     }
 }

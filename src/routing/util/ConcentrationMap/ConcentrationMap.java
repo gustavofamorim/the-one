@@ -44,7 +44,7 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
     protected int worldSize[] = new Settings(movement.MovementModel.MOVEMENT_MODEL_NS).getCsvInts(movement.MovementModel.WORLD_SIZE);
 
     /** The total number of contacts registered. */
-    protected long totalOfContacts = 0;
+    protected BigDecimal totalOfContacts = new BigDecimal(0);
 
     public ConcentrationMap(DTNHost host, Settings s){
         this.host = host;
@@ -59,6 +59,7 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      */
     private Coord convertMapLocationToRegionKey(Coord mapLocation){
         if(!this.map.containsKey(mapLocation)) {
+            //Calculate the region coordinate
             double x = Math.floor(mapLocation.getX() / this.regionLength);
             double y = Math.floor(mapLocation.getY() / this.regionLength);
             return (new Coord(x, y));
@@ -68,18 +69,17 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
 
     /**
      * Returns the concentration of a region.
-     * @param coord The region coordinate.
+     * @param region The region coordinate.
      * @return The concentration of a region.
      */
-    public BigDecimal getConcentration(Coord coord){
-        Coord regionBase = this.convertMapLocationToRegionKey(coord);
-        if (this.map.containsKey(regionBase)){
-
-            BigDecimal result = new BigDecimal(this.getRegionNrOfContacts(regionBase)).divide(new BigDecimal(this.totalOfContacts), MathContext.DECIMAL128);
+    public BigDecimal getConcentration(Coord region){
+        //Coord regionBase = this.convertMapLocationToRegionKey(coord);
+        if(this.map.containsKey(region) && !this.getRegionNrOfContacts(region).equals(BigDecimal.ZERO)){
+            BigDecimal result = this.getRegionNrOfContacts(region).divide(this.totalOfContacts, MathContext.DECIMAL128);
             return (result);
         }
         //Region not mapped yet
-        return (new BigDecimal("0"));
+        return (new BigDecimal(0));
     }
 
     /**
@@ -88,13 +88,15 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      */
     public void recordContact(Coord nodeLocation){
         Coord regionOfNode = this.convertMapLocationToRegionKey(nodeLocation);
+
+        this.totalOfContacts = this.totalOfContacts.add(new BigDecimal(1));
+
         if(!this.map.containsKey(regionOfNode)){
-            this.setRegionNrOfContacts(regionOfNode, new Long(1));
+            this.setRegionNrOfContacts(regionOfNode, new BigDecimal(1));
         }
         else{
-            this.setRegionNrOfContacts(regionOfNode, new Long(this.getRegionNrOfContacts(regionOfNode) + 1));
+            this.setRegionNrOfContacts(regionOfNode, this.getRegionNrOfContacts(regionOfNode).add(new BigDecimal(1)));
         }
-        this.totalOfContacts++;
     }
 
     /**
@@ -102,6 +104,13 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      * @param anotherMap The map received from another node.
      */
     public abstract void mergeConcentrationMap(ConcentrationMap<StoreType> anotherMap);
+
+    public void applyReductionOfValues(){
+        for (Coord key : this.map.keySet()) {
+            this.setRegionNrOfContacts(key, this.getRegionNrOfContacts(key).divide(new BigDecimal(2), MathContext.DECIMAL128));
+        }
+        this.totalOfContacts.divide(new BigDecimal(2), MathContext.DECIMAL128);
+    }
 
     /** Returns the routing info of this concentration map.
      *  @return The routing info of this concentration map.
@@ -120,9 +129,9 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
         return (concentrationMap);
     }
 
-    public abstract Long getRegionNrOfContacts(Coord region);
+    public abstract BigDecimal getRegionNrOfContacts(Coord region);
 
-    public abstract void setRegionNrOfContacts(Coord region, Long contacts);
+    public abstract void setRegionNrOfContacts(Coord region, BigDecimal contacts);
 
     /**
      * Clone this concentration map.
@@ -144,12 +153,17 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      */
     @Override
     public String toString(){
+        Coord tmpCoord = new Coord(0,0);
         String str = "";
-        for(int i = 0; i < Math.floor(this.worldSize[0] / this.regionLength); i++){
-            for(int j = 0; j < Math.floor(this.worldSize[1] / this.regionLength); j++){
-                str += "\t" + i + "  " + j + "  " + this.getConcentration(new Coord(i, j)) + "\n";
+        str += this.totalOfContacts + "\n";
+        for(double i = 0; i < Math.floor(this.worldSize[0] / this.regionLength); i+=1){
+            tmpCoord.setX(i);
+            for(double j = 0; j < Math.floor(this.worldSize[1] / this.regionLength); j+=1){
+                tmpCoord.setY(j);
+                str += "\t" + i + "\t" + j + "\t" + this.getRegionNrOfContacts(tmpCoord) + "\t" + this.getConcentration(tmpCoord) + "\n";
             }
         }
+
         return (str);
     }
 }

@@ -4,31 +4,33 @@ import core.Coord;
 import core.DTNHost;
 import core.Settings;
 
+import java.math.BigDecimal;
+
 /**
  * Created by gustavo on 28/08/16.
  */
-public class WithoutMergeConcentrationMap extends ConcentrationMap<Long> {
+public class NoMergeConcentrationMap extends ConcentrationMap<BigDecimal> {
 
-    public WithoutMergeConcentrationMap(DTNHost host, Settings s){
+    public NoMergeConcentrationMap(DTNHost host, Settings s){
         super(host, s);
     }
 
     @Override
-    public void mergeConcentrationMap(ConcentrationMap<Long> anotherMap) {
+    public void mergeConcentrationMap(ConcentrationMap<BigDecimal> anotherMap) {
         //This map not support merge. Just return.
         return;
     }
 
     @Override
-    public Long getRegionNrOfContacts(Coord region) {
+    public BigDecimal getRegionNrOfContacts(Coord region) {
         if(this.map.containsKey(region)){
             return (this.map.get(region));
         }
-        return (new Long(0));
+        return (BigDecimal.ZERO);
     }
 
     @Override
-    public void setRegionNrOfContacts(Coord region, Long contacts) {
+    public void setRegionNrOfContacts(Coord region, BigDecimal contacts) {
         if(!this.map.containsKey(region)){
             this.map.put(region, contacts);
         }

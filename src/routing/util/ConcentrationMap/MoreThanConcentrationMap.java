@@ -3,35 +3,41 @@ package routing.util.ConcentrationMap;
 import core.Coord;
 import core.DTNHost;
 import core.Settings;
-import sun.awt.image.PixelConverter;
 
 import java.math.BigDecimal;
 
 /**
- * Created by gustavo on 28/08/16.
+ * Created by gustavo on 03/09/16.
  */
-public class IncrementalConcentrationMap extends ConcentrationMap<BigDecimal>{
+public class MoreThanConcentrationMap extends ConcentrationMap<BigDecimal>{
 
-    public IncrementalConcentrationMap(DTNHost host, Settings s){
+    public MoreThanConcentrationMap(DTNHost host, Settings s){
         super(host, s);
     }
 
     @Override
     public void mergeConcentrationMap(ConcentrationMap<BigDecimal> anotherMap) {
         BigDecimal tmpTotalIncrements = BigDecimal.ZERO;
-
         for(Coord key : anotherMap.map.keySet()){
-            //If this map contais the region, increment the number of contacts in the region
+            //If this map contais the region
             if(this.map.containsKey(key)){
-                this.map.replace(key, this.map.get(key).add(BigDecimal.ONE));
-                tmpTotalIncrements = tmpTotalIncrements.add(BigDecimal.ONE);
+                //If another map has more contacs registred, copy the value
+                if(anotherMap.map.get(key).compareTo(this.map.get(key)) < 0){
+                    this.map.replace(key, this.map.get(key).add(anotherMap.map.get(key)));
+                    tmpTotalIncrements = tmpTotalIncrements.add(anotherMap.map.get(key));
+                }
+                //If not, just increment the number of contacts
+                else{
+                    tmpTotalIncrements = tmpTotalIncrements.add(this.map.get(key));
+                }
             }
+            //If not, add the entry
             else{
                 this.map.put(key, anotherMap.map.get(key));
                 tmpTotalIncrements = tmpTotalIncrements.add(anotherMap.map.get(key));
             }
         }
-        this.totalOfContacts = this.totalOfContacts.add(tmpTotalIncrements);
+        this.totalOfContacts = tmpTotalIncrements;
 
         //this.applyReductionOfValues();
     }

@@ -71,12 +71,20 @@ public class Coord implements Cloneable, Comparable<Coord> {
 		return this.x;
 	}
 
+	public void setX(double x) {
+		this.x = x;
+	}
+
 	/**
 	 * Returns the y coordinate
 	 * @return y coordinate
 	 */
 	public double getY() {
 		return this.y;
+	}
+
+	public void setY(double y) {
+		this.y = y;
 	}
 
 	/**

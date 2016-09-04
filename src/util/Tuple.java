@@ -29,12 +29,26 @@ public class Tuple<K,V>  {
 		return key;
 	}
 
+	/** Change the key value
+	 * @param key the new key value.
+	 */
+	public void setKey(K key) {
+		this.key = key;
+	}
+
 	/**
 	 * Returns the value
 	 * @return the value
 	 */
 	public V getValue() {
 		return value;
+	}
+
+	/** Change the value
+	 * @param value the new value.
+	 */
+	public void setValue(V value) {
+		this.value = value;
 	}
 
 	/**
