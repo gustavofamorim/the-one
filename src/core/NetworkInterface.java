@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import routing.ActiveRouter;
-
 import util.ActivenessHandler;
 
 /**
@@ -24,7 +22,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	/** transmit speed -setting id ({@value})*/
 	public static final String TRANSMIT_SPEED_S = "transmitSpeed";
 	/** scanning interval -setting id ({@value})*/
-	public static final String SCAN_INTERVAL_S = "scanInterval";
+	public static final String DEFAULT_SCAN_INTERVAL_S = "defaultScanInterval";
+	public static final String MIN_SCAN_INTERVAL_S = "minScanInterval";
+	public static final String MAX_SCAN_INTERVAL_S = "maxScanInterval";
 
 	/**
 	 * Sub-namespace for the network related settings in the Group namespace
@@ -60,8 +60,13 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	protected double oldTransmitRange;
 	protected int transmitSpeed;
 	protected ConnectivityOptimizer optimizer = null;
-	/** scanning interval, or 0.0 if n/a */
-	private double scanInterval;
+	/** default scanning interval, or 0.0 if n/a */
+	private double defaultScanInterval;
+	private double maxScanInterval;
+	private double minScanInterval;
+
+	/** variable scanning interval, or 0.0 if n/a */
+	private double actualScanInterval;
 	private double lastScanTime;
 
 	/** activeness handler for the node group */
@@ -94,6 +99,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.transmitSpeed = s.getInt(TRANSMIT_SPEED_S);
 		ensurePositiveValue(transmitRange, TRANSMIT_RANGE_S);
 		ensurePositiveValue(transmitSpeed, TRANSMIT_SPEED_S);
+		this.setScanValues(s);
 	}
 
 	/**
@@ -114,7 +120,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.interfacetype = ni.interfacetype;
 		this.transmitRange = ni.transmitRange;
 		this.transmitSpeed = ni.transmitSpeed;
-		this.scanInterval = ni.scanInterval;
 		this.ah = ni.ah;
 
 		if (ni.activenessJitterMax > 0) {
@@ -123,9 +128,12 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			this.activenessJitterValue = 0;
 		}
 
-		this.scanInterval = ni.scanInterval;
+		this.defaultScanInterval = ni.defaultScanInterval;
+		this.maxScanInterval = ni.maxScanInterval;
+		this.minScanInterval = ni.minScanInterval;
+		this.actualScanInterval = this.defaultScanInterval;
 		/* draw lastScanTime of [0 -- scanInterval] */
-		this.lastScanTime = rng.nextDouble() * this.scanInterval;
+		this.lastScanTime = rng.nextDouble() * this.defaultScanInterval;
 	}
 
 	/**
@@ -146,7 +154,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		    !comBus.containsProperty(RANGE_ID)) {
 			/* add properties and subscriptions only for the 1st interface */
 			/* TODO: support for multiple interfaces */
-			comBus.addProperty(SCAN_INTERVAL_ID, this.scanInterval);
+			comBus.addProperty(SCAN_INTERVAL_ID, this.defaultScanInterval);
 			comBus.addProperty(RANGE_ID, this.transmitRange);
 			comBus.addProperty(SPEED_ID, this.transmitSpeed);
 			comBus.subscribe(SCAN_INTERVAL_ID, this);
@@ -168,14 +176,10 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param s The settings object using the right group namespace
 	 */
 	public void setGroupSettings(Settings s) {
+		this.setScanValues(s);
 		s.setSubNameSpace(NET_SUB_NS);
 		ah = new ActivenessHandler(s);
 
-		if (s.contains(SCAN_INTERVAL_S)) {
-			this.scanInterval =  s.getDouble(SCAN_INTERVAL_S);
-		} else {
-			this.scanInterval = 0;
-		}
 		if (s.contains(ACT_JITTER_S)) {
 			this.activenessJitterMax = s.getInt(ACT_JITTER_S);
 		}
@@ -246,7 +250,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			/* not active -> make range 0 */
 			this.oldTransmitRange = this.transmitRange;
 			host.getComBus().updateProperty(RANGE_ID, 0.0);
-		} else if (active == true && this.transmitRange == 0.0) {
+		}
+		else if (active == true && this.transmitRange == 0.0) {
 			/* active, but range == 0 -> restore range  */
 			host.getComBus().updateProperty(RANGE_ID,
 					this.oldTransmitRange);
@@ -265,12 +270,13 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			return false;
 		}
 
-		if (scanInterval > 0.0) {
+		if (defaultScanInterval > 0.0) {
 			if (simTime < lastScanTime) {
 				return false; /* not time for the first scan */
 			}
-			else if (simTime > lastScanTime + scanInterval) {
+			else if (simTime > lastScanTime + defaultScanInterval) {
 				lastScanTime = simTime; /* time to start the next scan round */
+				this.actualScanInterval = this.host.getEnergy().getBestScanTime(this.minScanInterval, this.defaultScanInterval, this.maxScanInterval);
 				return true;
 			}
 			else if (simTime != lastScanTime ){
@@ -427,7 +433,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public void moduleValueChanged(String key, Object newValue) {
 		if (key.equals(SCAN_INTERVAL_ID)) {
-			this.scanInterval = (Double)newValue;
+			this.defaultScanInterval = (Double)newValue;
 		}
 		else if (key.equals(SPEED_ID)) {
 			this.transmitSpeed = (Integer)newValue;
@@ -486,6 +492,31 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		anotherNode.connectionDown(con);
 
 		connections.remove(index);
+	}
+
+	public void setScanValues(Settings s){
+		if (s.contains(DEFAULT_SCAN_INTERVAL_S)) {
+			this.defaultScanInterval =  s.getDouble(DEFAULT_SCAN_INTERVAL_S);
+		}
+		else {
+			this.defaultScanInterval = 0;
+		}
+
+		if (s.contains(MAX_SCAN_INTERVAL_S)) {
+			this.maxScanInterval =  s.getDouble(MAX_SCAN_INTERVAL_S);
+		}
+		else {
+			this.maxScanInterval = 0;
+		}
+
+		if (s.contains(MIN_SCAN_INTERVAL_S)) {
+			this.minScanInterval =  s.getDouble(MIN_SCAN_INTERVAL_S);
+		}
+		else {
+			this.minScanInterval = 0;
+		}
+
+		this.actualScanInterval = this.defaultScanInterval;
 	}
 
 	/**
