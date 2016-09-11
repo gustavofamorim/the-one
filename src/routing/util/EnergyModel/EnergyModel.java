@@ -2,11 +2,12 @@
  * Copyright 2011 Aalto University, ComNet
  * Released under GPLv3. See LICENSE.txt for details.
  */
-package routing.util;
+package routing.util.EnergyModel;
 
 import java.util.Random;
 
 import core.*;
+import routing.util.ConcentrationMap.ConcentrationMap;
 
 /**
  * Energy model for routing modules. Handles power use from scanning (device
@@ -14,7 +15,12 @@ import core.*;
  * often than 1/s, constant scanning is assumed (and power consumption does not
  * increase from {@link #scanEnergy} value).
  */
-public class EnergyModel implements ModuleCommunicationListener {
+public abstract class EnergyModel implements ModuleCommunicationListener {
+
+	public static final String PACKAGE_S = "routing.util.EnergyModel.";
+
+	public static final String SCAN_AJUSTMENT_MODEL_S = "adjustmentModel";
+
 	/** Initial units of energy -setting id ({@value}). Can be either a
 	 * single value, or a range of two values. In the latter case, the used
 	 * value is a uniformly distributed random value between the two values. */
@@ -81,13 +87,14 @@ public class EnergyModel implements ModuleCommunicationListener {
 	private double lastUpdate;
 	private ModuleCommunicationBus comBus;
 	private static Random rng = null;
+	protected DTNHost host;
 
 	/**
 	 * Constructor. Creates a new message router based on the settings in
 	 * the given Settings object.
 	 * @param s The settings object
 	 */
-	public EnergyModel(Settings s, ModuleCommunicationBus comBus) {
+	public EnergyModel(Settings s, ModuleCommunicationBus comBus, DTNHost host) {
 		this.initEnergy = s.getCsvDoubles(INIT_ENERGY_S);
 
 		if (this.initEnergy.length != 1 && this.initEnergy.length != 2) {
@@ -107,6 +114,8 @@ public class EnergyModel implements ModuleCommunicationListener {
 
 		this.gpsScanEnergy = s.contains(GPS_SCAN_ENERGY_S) ? s.getDouble(GPS_SCAN_ENERGY_S) : 0;
 
+		this.host = host;
+
 		if (s.contains(WARMUP_S)) {
 			this.warmupTime = s.getInt(WARMUP_S);
 			if (this.warmupTime == -1) {
@@ -117,29 +126,6 @@ public class EnergyModel implements ModuleCommunicationListener {
 		else {
 			this.warmupTime = 0;
 		}
-	}
-
-	/**
-	 * Copy constructor.
-	 * @param proto The model prototype where setting values are copied from
-	 */
-	protected EnergyModel(EnergyModel proto) {
-		this.initEnergy = proto.initEnergy;
-		setEnergy(this.initEnergy);
-		this.scanEnergy = proto.scanEnergy;
-		this.transmitEnergy = proto.transmitEnergy;
-		this.warmupTime  = proto.warmupTime;
-		this.scanResponseEnergy = proto.scanResponseEnergy;
-		this.comBus = null;
-		this.lastUpdate = 0;
-		this.rechargeTime = proto.rechargeTime;
-		this.rechargeCapacity = proto.rechargeCapacity;
-		this.lastRecharge = proto.lastRecharge;
-		this.gpsScanEnergy = proto.gpsScanEnergy;
-	}
-
-	public EnergyModel replicate() {
-		return new EnergyModel(this);
 	}
 
 	/** Determine the rechage time period.
@@ -249,6 +235,8 @@ public class EnergyModel implements ModuleCommunicationListener {
 	public void reduceGpsDiscoveryEnergy(){
 		reduceEnergy(this.gpsScanEnergy);
 	}
+
+	public abstract double getBestScanTime(double min, double defaultTime, double max);
 
 	/**
 	 * Reduces the energy reserve for the amount that is used by sending data
