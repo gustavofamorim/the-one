@@ -57,7 +57,7 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      * @param mapLocation The actual location of the node.
      * @return The tuble of the region wich includes de coordinate.
      */
-    private Coord convertMapLocationToRegionKey(Coord mapLocation){
+    public Coord convertMapLocationToRegionKey(Coord mapLocation){
         if(!this.map.containsKey(mapLocation)) {
             //Calculate the region coordinate
             double x = Math.floor(mapLocation.getX() / this.regionLength);
@@ -160,7 +160,7 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
             tmpCoord.setX(i);
             for(double j = 0; j < (Math.ceil(this.worldSize[1] / this.regionLength) + 1); j+=1){
                 tmpCoord.setY(j);
-                str += "\t" + i + "\t" + j + "\t" + this.getRegionNrOfContacts(tmpCoord) + "\t" + this.getConcentration(tmpCoord) + "\n";
+                str += "\t" + i + "\t" + j + "\t" + /*this.getRegionNrOfContacts(tmpCoord) +*/ "\t" + this.getConcentration(tmpCoord) + "\n";
             }
         }
 
