@@ -196,6 +196,9 @@ public class EventLogPanel extends JPanel
 	 */
 	private void updateLogView() {
 		//TODO Optimization: Check if update is really necessary
+		if(this.gui.getGuiControls().isFfw()){
+			return;
+		}
 		this.removeAll();
 		for (int i=0; i< this.eventPanes.size(); i++) {
 			this.add(eventPanes.get(i));

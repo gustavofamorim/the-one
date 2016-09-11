@@ -302,6 +302,10 @@ public class DTNSimGUI extends DTNSimUI {
 	return this.main;
     }
 
+    public GUIControls getGuiControls() {
+    	return this.guiControls;
+	}
+
 	/**
 	 * Suspend thread for ms milliseconds
 	 * @param ms The nrof milliseconds to wait
