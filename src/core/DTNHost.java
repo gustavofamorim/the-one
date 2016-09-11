@@ -12,7 +12,8 @@ import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
 import routing.util.ConcentrationMap.ConcentrationMap;
-import routing.util.EnergyModel;
+import routing.util.EnergyModel.EnergyModel;
+import routing.util.EnergyModel.SimpleEnergyModel;
 import routing.util.RoutingInfo;
 
 import static core.Constants.DEBUG;
@@ -103,8 +104,13 @@ public class DTNHost implements Comparable<DTNHost> {
 			this.concentrationMap = (ConcentrationMap) s.loadObject(ConcentrationMap.PACKAGE_S + s.getSetting(ConcentrationMap.CONCENTRATION_MERGE_MODEL_S), argClass, args);
 		}
 
-		if (s.contains(EnergyModel.INIT_ENERGY_S)) {
-			this.energy = new EnergyModel(s, this.comBus);
+		if (s.contains(EnergyModel.SCAN_AJUSTMENT_MODEL_S)) {
+			Class<?> argClass[] = {Settings.class, ModuleCommunicationBus.class, DTNHost.class};
+			Object args[] = {s, comBus, this};
+			this.energy = (EnergyModel) s.loadObject(EnergyModel.PACKAGE_S + s.getSetting(EnergyModel.SCAN_AJUSTMENT_MODEL_S), argClass, args);
+		}
+		else{
+			this.energy = new SimpleEnergyModel(s, comBus, this);
 		}
 	}
 
@@ -183,8 +189,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void connectionUp(Connection con) {
 		if(this.concentrationMap != null){
-			con.getOtherNode(this).concentrationMap.mergeConcentrationMap(this.getConcentrationMap());
 			this.concentrationMap.recordContact(this.location.getPosition());
+			con.getOtherNode(this).concentrationMap.mergeConcentrationMap(this.getConcentrationMap());
 		}
 		this.router.changedConnection(con);
 	}
