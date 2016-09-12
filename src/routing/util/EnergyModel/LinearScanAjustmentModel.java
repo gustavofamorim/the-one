@@ -3,6 +3,7 @@ package routing.util.EnergyModel;
 import core.DTNHost;
 import core.ModuleCommunicationBus;
 import core.Settings;
+import core.SimClock;
 import routing.util.ConcentrationMap.ConcentrationMap;
 
 /**
@@ -25,6 +26,11 @@ public class LinearScanAjustmentModel extends EnergyModel {
     public double getBestScanTime(double min, double defaultTime, double max) {
         double best;
         ConcentrationMap map = this.host.getConcentrationMap();
+
+        /* if not reached the warmup time, just return */
+        if(this.adjustmentWarmup >= SimClock.getTime()){
+            return (defaultTime);
+        }
 
         double deltaI = min - max;
         double concentration = map.getConcentration(map.convertMapLocationToRegionKey(host.getLocation())).doubleValue();

@@ -19,7 +19,8 @@ public abstract class EnergyModel implements ModuleCommunicationListener {
 
 	public static final String PACKAGE_S = "routing.util.EnergyModel.";
 
-	public static final String SCAN_AJUSTMENT_MODEL_S = "adjustmentModel";
+	public static final String SCAN_ADJUSTMENT_MODEL_S = "adjustmentModel";
+	public static final String SCAN_ADJUSTMENT_WARMUP_S = "adjustmentWarmup";
 
 	/** Initial units of energy -setting id ({@value}). Can be either a
 	 * single value, or a range of two values. In the latter case, the used
@@ -67,6 +68,9 @@ public abstract class EnergyModel implements ModuleCommunicationListener {
 	/** Initial energy levels from the settings */
 	private final double[] initEnergy;
 	private double warmupTime;
+
+	protected double adjustmentWarmup;
+
 	/** current energy level */
 	private double currentEnergy;
 	/** energy usage per scan */
@@ -125,6 +129,13 @@ public abstract class EnergyModel implements ModuleCommunicationListener {
 		}
 		else {
 			this.warmupTime = 0;
+		}
+
+		if (s.contains(SCAN_ADJUSTMENT_WARMUP_S)) {
+			this.adjustmentWarmup = s.getDouble(SCAN_ADJUSTMENT_WARMUP_S);
+		}
+		else{
+			this.adjustmentWarmup = 0;
 		}
 	}
 
