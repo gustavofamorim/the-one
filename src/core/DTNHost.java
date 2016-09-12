@@ -104,10 +104,10 @@ public class DTNHost implements Comparable<DTNHost> {
 			this.concentrationMap = (ConcentrationMap) s.loadObject(ConcentrationMap.PACKAGE_S + s.getSetting(ConcentrationMap.CONCENTRATION_MERGE_MODEL_S), argClass, args);
 		}
 
-		if (s.contains(EnergyModel.SCAN_AJUSTMENT_MODEL_S)) {
+		if (s.contains(EnergyModel.SCAN_ADJUSTMENT_MODEL_S)) {
 			Class<?> argClass[] = {Settings.class, ModuleCommunicationBus.class, DTNHost.class};
 			Object args[] = {s, comBus, this};
-			this.energy = (EnergyModel) s.loadObject(EnergyModel.PACKAGE_S + s.getSetting(EnergyModel.SCAN_AJUSTMENT_MODEL_S), argClass, args);
+			this.energy = (EnergyModel) s.loadObject(EnergyModel.PACKAGE_S + s.getSetting(EnergyModel.SCAN_ADJUSTMENT_MODEL_S), argClass, args);
 		}
 		else{
 			this.energy = new SimpleEnergyModel(s, comBus, this);
