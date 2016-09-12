@@ -35,6 +35,8 @@ public class MoreThanConcentrationMap extends ConcentrationMap<BigDecimal>{
                 BigDecimal value = anotherMap.map.get(key).add(BigDecimal.ZERO);
                 this.map.put(key, value);
             }
+
+            this.updateMaxIfNeeded(key);
         }
 
         //Recalc the new number of contacts

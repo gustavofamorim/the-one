@@ -30,10 +30,10 @@ public class IncrementalConcentrationMap extends ConcentrationMap<BigDecimal>{
                 this.map.put(key, anotherMap.map.get(key));
                 tmpTotalIncrements = tmpTotalIncrements.add(anotherMap.map.get(key));
             }
+
+            this.updateMaxIfNeeded(key);
         }
         this.totalOfContacts = this.totalOfContacts.add(tmpTotalIncrements);
-
-        //this.applyReductionOfValues();
     }
 
     @Override

@@ -36,6 +36,8 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      */
     protected TreeMap<Coord, StoreType> map;
 
+    protected BigDecimal maxConcentration = new BigDecimal(0);
+
     /** The node reference */
     protected DTNHost host;
 
@@ -97,6 +99,8 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
         else{
             this.setRegionNrOfContacts(regionOfNode, this.getRegionNrOfContacts(regionOfNode).add(new BigDecimal(1)));
         }
+
+        this.updateMaxIfNeeded(regionOfNode);
     }
 
     /**
@@ -104,13 +108,6 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
      * @param anotherMap The map received from another node.
      */
     public abstract void mergeConcentrationMap(ConcentrationMap<StoreType> anotherMap);
-
-    public void applyReductionOfValues(){
-        for (Coord key : this.map.keySet()) {
-            this.setRegionNrOfContacts(key, this.getRegionNrOfContacts(key).divide(new BigDecimal(2), MathContext.DECIMAL128));
-        }
-        this.totalOfContacts.divide(new BigDecimal(2), MathContext.DECIMAL128);
-    }
 
     /** Returns the routing info of this concentration map.
      *  @return The routing info of this concentration map.
@@ -129,9 +126,19 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
         return (concentrationMap);
     }
 
+    protected void updateMaxIfNeeded(Coord key){
+        if(this.getConcentration(key).compareTo(this.maxConcentration) > 0){
+            this.maxConcentration = new BigDecimal(this.getRegionNrOfContacts(key).toString());
+        }
+    }
+
     public abstract BigDecimal getRegionNrOfContacts(Coord region);
 
     public abstract void setRegionNrOfContacts(Coord region, BigDecimal contacts);
+
+    public BigDecimal getMaxConcentration(){
+        return (this.maxConcentration);
+    }
 
     /**
      * Clone this concentration map.

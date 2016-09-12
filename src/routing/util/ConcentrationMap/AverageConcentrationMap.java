@@ -36,21 +36,10 @@ public class AverageConcentrationMap extends ConcentrationMap<Tuple<BigDecimal, 
             else{
                 this.map.put(key, anotherMap.map.get(key));
             }
+
+            this.updateMaxIfNeeded(key);
         }
         this.totalOfContacts = this.totalOfContacts.add(anotherMap.totalOfContacts);
-
-        this.applyReductionOfValues();
-    }
-
-    @Override
-    public void applyReductionOfValues(){
-        for(Coord key : this.map.keySet()){
-            Tuple<BigDecimal, BigDecimal> tuple = this.map.get(key);
-
-            tuple.setKey(tuple.getKey().divide(new BigDecimal(2), MathContext.DECIMAL128));
-            tuple.setValue(tuple.getValue().divide(new BigDecimal(2), MathContext.DECIMAL128));
-        }
-        this.totalOfContacts = this.totalOfContacts.divide(new BigDecimal(2), MathContext.DECIMAL128);
     }
 
     @Override
