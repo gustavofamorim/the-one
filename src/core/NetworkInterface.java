@@ -154,7 +154,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		    !comBus.containsProperty(RANGE_ID)) {
 			/* add properties and subscriptions only for the 1st interface */
 			/* TODO: support for multiple interfaces */
-			comBus.addProperty(SCAN_INTERVAL_ID, this.defaultScanInterval);
+			comBus.addProperty(MIN_SCAN_INTERVAL_S, this.minScanInterval);
+			comBus.addProperty(DEFAULT_SCAN_INTERVAL_S, this.defaultScanInterval);
+			comBus.addProperty(MAX_SCAN_INTERVAL_S, this.maxScanInterval);
 			comBus.addProperty(RANGE_ID, this.transmitRange);
 			comBus.addProperty(SPEED_ID, this.transmitSpeed);
 			comBus.subscribe(SCAN_INTERVAL_ID, this);
@@ -270,11 +272,11 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			return false;
 		}
 
-		if (defaultScanInterval > 0.0) {
+		if (actualScanInterval > 0.0) {
 			if (simTime < lastScanTime) {
 				return false; /* not time for the first scan */
 			}
-			else if (simTime > lastScanTime + defaultScanInterval) {
+			else if (simTime > lastScanTime + actualScanInterval) {
 				lastScanTime = simTime; /* time to start the next scan round */
 				this.actualScanInterval = this.host.getEnergy().getBestScanTime(this.minScanInterval, this.defaultScanInterval, this.maxScanInterval);
 				return true;
@@ -432,7 +434,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param newValue New value for the variable
 	 */
 	public void moduleValueChanged(String key, Object newValue) {
-		if (key.equals(SCAN_INTERVAL_ID)) {
+		if (key.equals(DEFAULT_SCAN_INTERVAL_S)) {
 			this.defaultScanInterval = (Double)newValue;
 		}
 		else if (key.equals(SPEED_ID)) {
@@ -504,15 +506,10 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 
 		if (s.contains(MAX_SCAN_INTERVAL_S)) {
 			this.maxScanInterval =  s.getDouble(MAX_SCAN_INTERVAL_S);
-		}
-		else {
-			this.maxScanInterval = 0;
-		}
-
-		if (s.contains(MIN_SCAN_INTERVAL_S)) {
 			this.minScanInterval =  s.getDouble(MIN_SCAN_INTERVAL_S);
 		}
 		else {
+			this.maxScanInterval = 0;
 			this.minScanInterval = 0;
 		}
 

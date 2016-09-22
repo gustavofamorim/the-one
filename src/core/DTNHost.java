@@ -221,6 +221,10 @@ public class DTNHost implements Comparable<DTNHost> {
 		return this.location.getPositionWithouConsumption();
 	}
 
+	public Coord getLocationWithConsumption() {
+		return this.location.getPosition();
+	}
+
 	/**
 	 * Returns the Path this node is currently traveling or null if no
 	 * path is in use at the moment.

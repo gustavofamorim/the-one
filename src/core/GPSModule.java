@@ -20,7 +20,7 @@ public class GPSModule implements Cloneable{
      */
     public Coord getPosition() {
         this.host.getEnergy().reduceGpsDiscoveryEnergy();
-        return position;
+        return (this.getPositionWithouConsumption());
     }
 
     /** Returns the actual position of the node without energy consumption.

@@ -127,7 +127,7 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
     }
 
     protected void updateMaxIfNeeded(Coord key){
-        if(this.getConcentration(key).compareTo(this.maxConcentration) > 0){
+        if(this.getRegionNrOfContacts(key).compareTo(this.maxConcentration) > 0){
             this.maxConcentration = new BigDecimal(this.getRegionNrOfContacts(key).toString());
         }
     }
@@ -137,7 +137,11 @@ public abstract class ConcentrationMap<StoreType> implements Cloneable{
     public abstract void setRegionNrOfContacts(Coord region, BigDecimal contacts);
 
     public BigDecimal getMaxConcentration(){
-        return (this.maxConcentration);
+        if(this.totalOfContacts.compareTo(BigDecimal.ZERO) > 0) {
+            return (this.maxConcentration.divide(this.totalOfContacts, MathContext.DECIMAL128));
+        }
+
+        return (BigDecimal.ZERO);
     }
 
     /**

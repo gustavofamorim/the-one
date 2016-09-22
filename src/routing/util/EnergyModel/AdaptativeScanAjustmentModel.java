@@ -4,6 +4,7 @@ import core.DTNHost;
 import core.ModuleCommunicationBus;
 import core.Settings;
 import core.SimClock;
+import routing.util.ConcentrationMap.ConcentrationMap;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -31,11 +32,16 @@ public class AdaptativeScanAjustmentModel extends EnergyModel{
             return (defaultTime);
         }
 
-        BigDecimal concentration = this.host.getConcentrationMap().getConcentration(this.host.getLocation());
-        BigDecimal maxConcentration = this.host.getConcentrationMap().getMaxConcentration();
+        ConcentrationMap map = this.host.getConcentrationMap();
 
-        BigDecimal remappedConcentration =
-                this.remapRange(BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ZERO, maxConcentration, concentration);
+        BigDecimal concentration = map.getConcentration(map.convertMapLocationToRegionKey(this.host.getLocationWithConsumption()));
+        BigDecimal maxConcentration = map.getMaxConcentration();
+
+        BigDecimal remappedConcentration = BigDecimal.ZERO;
+
+        if(maxConcentration.compareTo(BigDecimal.ZERO) > 0) {
+            remappedConcentration = this.remapRange(BigDecimal.ZERO, maxConcentration, BigDecimal.ZERO, BigDecimal.ONE, concentration);
+        }
 
         //min + (1-concentration)*max
         BigDecimal result =
